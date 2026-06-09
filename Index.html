@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Integration Calculator</title>
+
+<script src="https://cdn.jsdelivr.net/npm/mathjs@12/lib/browser/math.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+    font-family:Arial,sans-serif;
+    max-width:1000px;
+    margin:auto;
+    padding:20px;
+    background:#f5f5f5;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,.1);
+}
+
+input{
+    padding:10px;
+    width:100%;
+    margin-top:5px;
+    margin-bottom:15px;
+    box-sizing:border-box;
+}
+
+button{
+    padding:10px 20px;
+    cursor:pointer;
+}
+
+.result{
+    font-size:20px;
+    margin-top:15px;
+    font-weight:bold;
+}
+
+canvas{
+    margin-top:20px;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Simple Integration Calculator</h2>
+
+    <label>Function f(x)</label>
+    <input id="func" value="x^2 - 5*x + 7">
+
+    <label>Lower Bound (a)</label>
+    <input id="a" type="number" value="5">
+
+    <label>Upper Bound (b)</label>
+    <input id="b" type="number" value="6">
+
+    <button onclick="calculate()">Calculate Integral</button>
+
+    <div class="result" id="result"></div>
+
+    <canvas id="chart"></canvas>
+</div>
+
+<script>
+
+let chart;
+
+function f(expr,x){
+    return math.evaluate(expr,{x:x});
+}
+
+function integrate(expr,a,b,n=1000){
+    let h=(b-a)/n;
+    let sum=0;
+
+    for(let i=0;i<n;i++){
+        let x1=a+i*h;
+        let x2=x1+h;
+
+        sum += (f(expr,x1)+f(expr,x2))*h/2;
+    }
+
+    return sum;
+}
+
+function calculate(){
+
+    const expr=document.getElementById("func").value;
+    const a=parseFloat(document.getElementById("a").value);
+    const b=parseFloat(document.getElementById("b").value);
+
+    try{
+
+        const area=integrate(expr,a,b);
+
+        document.getElementById("result").innerHTML=
+        "∫ f(x) dx from "+a+" to "+b+
+        " = "+area.toFixed(6);
+
+        drawGraph(expr,a,b);
+
+    }catch(err){
+        document.getElementById("result").innerHTML=
+        "Error: "+err.message;
+    }
+}
+
+function drawGraph(expr,a,b){
+
+    const xs=[];
+    const ys=[];
+    const shaded=[];
+
+    const start=Math.min(a,b)-2;
+    const end=Math.max(a,b)+2;
+
+    for(let x=start;x<=end;x+=0.05){
+        xs.push(x);
+        ys.push(f(expr,x));
+
+        if(x>=a && x<=b){
+            shaded.push(f(expr,x));
+        }else{
+            shaded.push(null);
+        }
+    }
+
+    if(chart){
+        chart.destroy();
+    }
+
+    chart=new Chart(
+        document.getElementById("chart"),
+        {
+            type:'line',
+            data:{
+                labels:xs,
+                datasets:[
+                    {
+                        label:'f(x)',
+                        data:ys,
+                        borderWidth:2,
+                        pointRadius:0
+                    },
+                    {
+                        label:'Integration Region',
+                        data:shaded,
+                        fill:true,
+                        pointRadius:0,
+                        borderWidth:0
+                    }
+                ]
+            },
+            options:{
+                responsive:true,
+                scales:{
+                    x:{title:{display:true,text:'x'}},
+                    y:{title:{display:true,text:'f(x)'}}
+                }
+            }
+        }
+    );
+}
+
+calculate();
+
+</script>
+
+</body>
+</html>
